@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
         res.status(500).send("Internal Server Error");
     }
 });
-const fetchuser = require('../Middleware/fetchuser');
+const fetchuser = require('../middleware/fetchuser');
 
 // ROUTE 3: Get Loggedin User Details: POST "/api/auth/getuser". Login required
 router.post('/getuser', fetchuser, async (req, res) => {
