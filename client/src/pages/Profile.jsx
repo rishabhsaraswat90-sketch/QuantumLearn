@@ -24,7 +24,7 @@ const Profile = () => {
     const token = localStorage.getItem('token');
     if(!token) return;
     try {
-      const response = await fetch("http://localhost:5000/api/auth/getuser", {
+      const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/getuser", {
         method: "POST",
         headers: { "auth-token": token }
       });
@@ -62,7 +62,7 @@ const Profile = () => {
       const croppedImageBase64 = await getCroppedImg(imageSrc, croppedAreaPixels);
       
       const token = localStorage.getItem('token');
-      const response = await fetch("http://localhost:5000/api/auth/updateuser", {
+      const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/updateuser", {
         method: "PUT",
         headers: { 
             "Content-Type": "application/json",
@@ -94,7 +94,7 @@ const Profile = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-        const response = await fetch("http://localhost:5000/api/auth/updateuser", {
+        const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/updateuser", {
             method: "PUT",
             headers: { "Content-Type": "application/json", "auth-token": token },
             body: JSON.stringify({ name: formData.name })

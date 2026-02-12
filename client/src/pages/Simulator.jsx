@@ -33,7 +33,7 @@ const Simulator = () => {
     setLoading(true);
     setResults(null);
     try {
-      const response = await fetch("http://localhost:5000/api/simulation/run", {
+      const response = await fetch("https://quantumlearn-api.onrender.com/api/simulation/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ circuitData: circuit })
@@ -63,7 +63,7 @@ const Simulator = () => {
     if (!title) return;
 
     try {
-      const response = await fetch("http://localhost:5000/api/simulation/save", {
+      const response = await fetch("https://quantumlearn-api.onrender.com/api/simulation/save", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

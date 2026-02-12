@@ -14,7 +14,7 @@ const AdminPanel = () => {
       
       try {
         // 1. Get Users
-        const userRes = await fetch("http://localhost:5000/api/admin/users", {
+        const userRes = await fetch("https://quantumlearn-api.onrender.com/api/admin/users", {
           headers: { "auth-token": token }
         });
         
@@ -29,7 +29,7 @@ const AdminPanel = () => {
         setUsers(userData);
 
         // 2. Get Circuits
-        const circuitRes = await fetch("http://localhost:5000/api/admin/circuits", {
+        const circuitRes = await fetch("https://quantumlearn-api.onrender.com/api/admin/circuits", {
           headers: { "auth-token": token }
         });
         const circuitData = await circuitRes.json();
@@ -47,7 +47,7 @@ const AdminPanel = () => {
     if(!window.confirm("Are you sure? This will delete the user and ALL their projects.")) return;
 
     const token = localStorage.getItem('token');
-    await fetch(`http://localhost:5000/api/admin/user/${id}`, {
+    await fetch(`https://quantumlearn-api.onrender.com/api/admin/user/${id}`, {
         method: 'DELETE',
         headers: { "auth-token": token }
     });

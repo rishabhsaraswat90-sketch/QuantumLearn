@@ -17,7 +17,7 @@ const Dashboard = () => {
             try {
                 // Fake delay to show off the loader (Remove setTimeout in production if you want)
                 setTimeout(async () => {
-                    const response = await fetch("http://localhost:5000/api/simulation/fetchall", {
+                    const response = await fetch("https://quantumlearn-api.onrender.com/api/simulation/fetchall", {
                         method: "GET",
                         headers: {
                             "auth-token": token
