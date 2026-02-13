@@ -102,5 +102,37 @@ router.put('/updateuser', fetchuser, async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+// ROUTE 5: Change Password: PUT "/api/auth/changepassword". Login required
+router.put('/changepassword', fetchuser, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.id;
+
+        // 1. Find the user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // 2. Check if Current Password is correct
+        const passwordCompare = await bcrypt.compare(currentPassword, user.password);
+        if (!passwordCompare) {
+            return res.status(400).json({ error: "Incorrect current password" });
+        }
+
+        // 3. Hash the New Password
+        const salt = await bcrypt.genSalt(10);
+        const securedPassword = await bcrypt.hash(newPassword, salt);
+
+        // 4. Update Database
+        await User.findByIdAndUpdate(userId, { password: securedPassword });
+
+        res.json({ success: true, message: "Password Changed Successfully" });
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Internal Server Error");
+    }
+});
 
 module.exports = router;
