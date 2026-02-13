@@ -4,57 +4,34 @@ import { toast } from 'react-hot-toast';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // Profile Dropdown
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Mobile Menu
   const dropdownRef = useRef(null);
-  
-  // State for User Data
   const [user, setUser] = useState({ name: "", avatar: "" });
 
-  // 1. ROBUST FETCH FUNCTION
-  // We read the token INSIDE the function to ensure it's always fresh
   const fetchUserData = async () => {
     const currentToken = localStorage.getItem('token');
     if (!currentToken) return;
-
     try {
-      console.log("Navbar: Fetching latest user data..."); // Debug Log
       const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/getuser", {
-        method: "POST",
-        headers: { "auth-token": currentToken }
+        method: "POST", headers: { "auth-token": currentToken }
       });
       const json = await response.json();
-      
-      // Update state with fresh data
       setUser(json);
-      console.log("Navbar: User updated", json.name);
-    } catch (error) {
-      console.error("Navbar fetch error", error);
-    }
+    } catch (error) { console.error("Navbar fetch error", error); }
   };
 
-  // 2. EVENT LISTENER SETUP
   useEffect(() => {
-    // A. Fetch immediately on mount
     fetchUserData();
-
-    // B. Create a specific handler for the event
-    const handleUserUpdate = () => {
-      console.log("Navbar: Received 'userUpdated' event!");
-      fetchUserData();
-    };
-
-    // C. Listen for the event (Dispatched by Profile.jsx)
+    const handleUserUpdate = () => fetchUserData();
     window.addEventListener("userUpdated", handleUserUpdate);
     document.addEventListener("mousedown", handleClickOutside);
-
-    // D. Cleanup listeners when component updates/unmounts
     return () => {
       window.removeEventListener("userUpdated", handleUserUpdate);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []); // Empty dependency array ensures this listener sticks around
+  }, []);
 
-  // Close dropdown if clicked outside
   const handleClickOutside = (event) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
       setIsOpen(false);
@@ -66,123 +43,104 @@ const Navbar = () => {
     toast.success("Logged out successfully");
     navigate('/login');
     setIsOpen(false);
-    setUser({ name: "", avatar: "" }); // Clear state
+    setMobileMenuOpen(false);
+    setUser({ name: "", avatar: "" });
   };
 
-  // Get Token for conditional rendering of links
   const token = localStorage.getItem('token');
 
   return (
     <>
       <style>
         {`
-          .nav-link { color: #94a3b8; text-decoration: none; font-weight: 500; font-size: 15px; transition: all 0.3s ease; position: relative; }
-          .nav-link:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-          .nav-link::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; left: 50%; background: #00d2d3; transition: all 0.3s ease; transform: translateX(-50%); }
-          .nav-link:hover::after { width: 100%; }
+          .nav-container { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+          .desktop-links { display: flex; gap: 30px; align-items: center; background: rgba(255,255,255,0.03); padding: 12px 30px; borderRadius: 50px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
+          .mobile-menu-btn { display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
           
-          .dropdown-item { padding: 10px 15px; color: #ccc; text-decoration: none; display: block; font-size: 14px; transition: 0.2s; border-radius: 8px; cursor: pointer; }
-          .dropdown-item:hover { background: rgba(0, 210, 211, 0.1); color: #00d2d3; }
+          @media (max-width: 900px) {
+            .desktop-links { display: none; }
+            .mobile-menu-btn { display: block; }
+          }
+
+          /* Mobile Menu Overlay */
+          .mobile-menu {
+            position: fixed; top: 80px; left: 0; width: 100%; background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; display: flex; flexDirection: column; gap: 15px; z-index: 999;
+            animation: slideDown 0.3s ease-out;
+          }
+          @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         `}
       </style>
 
-      <nav style={{ 
-        position: 'fixed', top: 0, left: 0, width: '100%', padding: '20px 40px', 
-        display: 'flex', alignItems: 'center', zIndex: 1000, 
-        backdropFilter: 'blur(5px)', 
-        boxSizing: 'border-box'
-      }}>
-        
-        {/* LEFT: Logo */}
-        <div style={{ flex: 1 }}>
-            <Link to="/" style={{ textDecoration: 'none', fontSize: '26px', fontWeight: '900', background: 'linear-gradient(to right, #00d2d3, #ff9ff3)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '1px' }}>
+      <nav style={{ position: 'fixed', top: 0, left: 0, width: '100%', padding: '15px 20px', zIndex: 1000, backdropFilter: 'blur(10px)', background: 'rgba(15, 23, 42, 0.8)', boxSizing: 'border-box' }}>
+        <div className="nav-container">
+            {/* Logo */}
+            <Link to="/" style={{ textDecoration: 'none', fontSize: '22px', fontWeight: '900', background: 'linear-gradient(to right, #00d2d3, #ff9ff3)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               QuantumLearn
             </Link>
-        </div>
 
-        {/* CENTER: Links */}
-        <div style={{ display: 'flex', gap: '30px', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px 30px', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(5px)' }}>
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/about" className="nav-link">About</Link>
-          <Link to="/services" className="nav-link">Services</Link>
-          {token && (
-            <>
-              <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)' }}></div>
-              <Link to="/dashboard" className="nav-link" style={{ color: '#00d2d3' }}>Dashboard</Link>
-              <Link to="/simulator" className="nav-link" style={{ color: '#ff9ff3' }}>Simulator</Link>
-              <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)' }}></div>
-             {user.role === "admin" && ( 
-                <Link to="/admin" className="nav-link" style={{ color: '#ff4757', fontWeight: 'bold' }}>
-                  Admin Panel
-                </Link> 
+            {/* Desktop Links */}
+            <div className="desktop-links">
+              <Link to="/" className="nav-link" style={{color:'#94a3b8', textDecoration:'none'}}>Home</Link>
+              <Link to="/about" className="nav-link" style={{color:'#94a3b8', textDecoration:'none'}}>About</Link>
+              <Link to="/services" className="nav-link" style={{color:'#94a3b8', textDecoration:'none'}}>Services</Link>
+              {token && (
+                <>
+                  <span style={{color:'rgba(255,255,255,0.2)'}}>|</span>
+                  <Link to="/dashboard" style={{ color: '#00d2d3', textDecoration:'none' }}>Dashboard</Link>
+                  <Link to="/simulator" style={{ color: '#ff9ff3', textDecoration:'none' }}>Simulator</Link>
+                  {user.role === "Admin" && <Link to="/admin" style={{ color: '#ff4757', fontWeight:'bold', textDecoration:'none' }}>Admin</Link>}
+                </>
               )}
-            </>
-          )}
+            </div>
+
+            {/* Right Side: Profile or Hamburger */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                {!token ? (
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <Link to="/login" style={{color:'#94a3b8', textDecoration:'none', marginTop:'8px'}}>Login</Link>
+                        <Link to="/signup"><button className="btn-neon" style={{padding: '8px 15px', fontSize:'12px'}}>Get Started</button></Link>
+                    </div>
+                ) : (
+                    <button 
+                        key={user.avatar || 'default'}
+                        onClick={() => setIsOpen(!isOpen)}
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', background: user.avatar ? `url(${user.avatar})` : '#00d2d3', backgroundSize: 'cover', border: '2px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                    />
+                )}
+                
+                {/* Hamburger Icon */}
+                <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                    {mobileMenuOpen ? "✕" : "☰"}
+                </button>
+            </div>
         </div>
 
-        {/* RIGHT: Profile / Actions */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', gap: '15px', alignItems: 'center' }}>
-          {!token ? (
-            <>
-              <Link to="/login" className="nav-link" style={{ marginRight: '10px' }}>Login</Link>
-              <Link to="/signup">
-                <button className="btn-neon" style={{ padding: '10px 25px', borderRadius: '30px', fontSize: '14px', fontWeight: 'bold' }}>Get Started</button>
-              </Link>
-            </>
-          ) : (
-            // --- PROFILE DROPDOWN ---
-            <div style={{ position: 'relative' }} ref={dropdownRef}>
-                
-               <button 
-               key={user.avatar || 'default'} 
-               onClick={() => setIsOpen(!isOpen)} 
-               style={{ 
-                width: '45px', height: '45px', borderRadius: '50%', 
-                // 👇 NO QUOTES around the url(...)
-                background: user.avatar ? `url(${user.avatar})` : 'linear-gradient(135deg, #00d2d3, #2e86de)', 
-                backgroundSize: 'cover', 
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat', // Added for safety
-                border: '2px solid rgba(255,255,255,0.2)', 
-                color: 'white', fontWeight: 'bold', fontSize: '18px',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 15px rgba(0,210,211,0.3)',
-                transition: 'background 0.3s ease' // Smooth transition
-                }}>
-                {/* If NO avatar, show the first letter */}
-                    {!user.avatar && (user.name ? user.name.charAt(0).toUpperCase() : "U")}
-                </button>
-
-                {isOpen && (
-                    <div className="glass-panel" style={{ 
-                        position: 'absolute', top: '60px', right: '0', width: '220px', 
-                        padding: '10px', borderRadius: '15px', 
-                        border: '1px solid rgba(255,255,255,0.1)', 
-                        background: 'rgba(15, 23, 42, 0.95)',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-                        display: 'flex', flexDirection: 'column', gap: '5px'
-                    }}>
-                        <div style={{ padding: '10px 15px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '5px', color: '#64748b', fontSize: '12px' }}>
-                            SIGNED IN AS <br/>
-                            <span style={{ color: 'white', fontSize: '14px' }}>{user.name || "User"}</span>
-                        </div>
-
-                        <Link to="/profile" className="dropdown-item" onClick={() => setIsOpen(false)}>
-                            👤 My Profile
-                        </Link>
-                        <Link to="/change-password" className="dropdown-item" onClick={() => setIsOpen(false)}>
-                            🔒 Change Password
-                        </Link>
-                        <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '5px 0' }}></div>
-                        
-                        <div className="dropdown-item" onClick={handleLogout} style={{ color: '#ff4757' }}>
-                            🚪 Logout
-                        </div>
-                    </div>
+        {/* MOBILE MENU DROPDOWN */}
+        {mobileMenuOpen && (
+            <div className="mobile-menu">
+                <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{color:'white', textDecoration:'none', fontSize:'18px'}}>Home</Link>
+                <Link to="/about" onClick={() => setMobileMenuOpen(false)} style={{color:'white', textDecoration:'none', fontSize:'18px'}}>About</Link>
+                <Link to="/services" onClick={() => setMobileMenuOpen(false)} style={{color:'white', textDecoration:'none', fontSize:'18px'}}>Services</Link>
+                {token && (
+                    <>
+                        <hr style={{width:'100%', borderColor:'rgba(255,255,255,0.1)'}}/>
+                        <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} style={{color:'#00d2d3', textDecoration:'none', fontSize:'18px'}}>Dashboard</Link>
+                        <Link to="/simulator" onClick={() => setMobileMenuOpen(false)} style={{color:'#ff9ff3', textDecoration:'none', fontSize:'18px'}}>Simulator</Link>
+                        {user.role === "Admin" && <Link to="/admin" onClick={() => setMobileMenuOpen(false)} style={{color:'#ff4757', textDecoration:'none', fontSize:'18px'}}>Admin Panel</Link>}
+                    </>
                 )}
             </div>
-          )}
-        </div>
+        )}
+
+        {/* PROFILE DROPDOWN (Keep existing logic) */}
+        {isOpen && token && (
+            <div className="glass-panel" ref={dropdownRef} style={{ position: 'absolute', top: '70px', right: '20px', width: '200px', padding: '15px', borderRadius: '15px', zIndex: 1001, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <Link to="/profile" onClick={() => setIsOpen(false)} style={{color:'white', textDecoration:'none'}}>👤 My Profile</Link>
+                <Link to="/change-password" onClick={() => setIsOpen(false)} style={{color:'white', textDecoration:'none'}}>🔒 Change Password</Link>
+                <div onClick={handleLogout} style={{color:'#ff4757', cursor:'pointer'}}>🚪 Logout</div>
+            </div>
+        )}
       </nav>
     </>
   );
