@@ -127,18 +127,23 @@ const Navbar = () => {
             // --- PROFILE DROPDOWN ---
             <div style={{ position: 'relative' }} ref={dropdownRef}>
                 
-               <button onClick={() => setIsOpen(!isOpen)} 
+               <button 
+               key={user.avatar || 'default'} 
+               onClick={() => setIsOpen(!isOpen)} 
                style={{ 
                 width: '45px', height: '45px', borderRadius: '50%', 
-                // 3. CORRECT CSS SYNTAX (No Quotes)
+                // 👇 NO QUOTES around the url(...)
                 background: user.avatar ? `url(${user.avatar})` : 'linear-gradient(135deg, #00d2d3, #2e86de)', 
-                backgroundSize: 'cover', backgroundPosition: 'center',
+                backgroundSize: 'cover', 
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat', // Added for safety
                 border: '2px solid rgba(255,255,255,0.2)', 
                 color: 'white', fontWeight: 'bold', fontSize: '18px',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 15px rgba(0,210,211,0.3)'
-                }}
-                >
+                boxShadow: '0 0 15px rgba(0,210,211,0.3)',
+                transition: 'background 0.3s ease' // Smooth transition
+                }}>
+                {/* If NO avatar, show the first letter */}
                     {!user.avatar && (user.name ? user.name.charAt(0).toUpperCase() : "U")}
                 </button>
 
