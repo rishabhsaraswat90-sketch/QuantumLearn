@@ -111,7 +111,7 @@ const Navbar = () => {
               <Link to="/dashboard" className="nav-link" style={{ color: '#00d2d3' }}>Dashboard</Link>
               <Link to="/simulator" className="nav-link" style={{ color: '#ff9ff3' }}>Simulator</Link>
               <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)' }}></div>
-             {user.role === "Admin" && ( 
+             {user.role === "admin" && ( 
                 <Link to="/admin" className="nav-link" style={{ color: '#ff4757', fontWeight: 'bold' }}>
                   Admin Panel
                 </Link> 
