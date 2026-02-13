@@ -4,56 +4,73 @@ import { toast } from 'react-hot-toast';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token'); 
-  const [isOpen, setIsOpen] = useState(false); // Dropdown State
-  const dropdownRef = useRef(null); // To detect clicks outside
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
   
-  // NEW: State for User Data
+  // State for User Data
   const [user, setUser] = useState({ name: "", avatar: "" });
 
-  // NEW: Fetch User Data Logic
+  // 1. ROBUST FETCH FUNCTION
+  // We read the token INSIDE the function to ensure it's always fresh
   const fetchUserData = async () => {
-    if (!token) return;
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
+
     try {
+      console.log("Navbar: Fetching latest user data..."); // Debug Log
       const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/getuser", {
         method: "POST",
-        headers: { "auth-token": token }
+        headers: { "auth-token": currentToken }
       });
       const json = await response.json();
+      
+      // Update state with fresh data
       setUser(json);
+      console.log("Navbar: User updated", json.name);
     } catch (error) {
       console.error("Navbar fetch error", error);
     }
   };
 
- // Fetch on mount AND listen for "userUpdated" events
+  // 2. EVENT LISTENER SETUP
   useEffect(() => {
-    fetchUserData(); // Fetch immediately on load
+    // A. Fetch immediately on mount
+    fetchUserData();
 
-    // Listen for our custom event (triggered by Profile.jsx)
-    window.addEventListener("userUpdated", fetchUserData);
-    
-    // Also Close dropdown if clicked outside
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
+    // B. Create a specific handler for the event
+    const handleUserUpdate = () => {
+      console.log("Navbar: Received 'userUpdated' event!");
+      fetchUserData();
     };
+
+    // C. Listen for the event (Dispatched by Profile.jsx)
+    window.addEventListener("userUpdated", handleUserUpdate);
     document.addEventListener("mousedown", handleClickOutside);
 
+    // D. Cleanup listeners when component updates/unmounts
     return () => {
-      // Clean up the listener when component unmounts
-      window.removeEventListener("userUpdated", fetchUserData);
+      window.removeEventListener("userUpdated", handleUserUpdate);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [token]);
+  }, []); // Empty dependency array ensures this listener sticks around
+
+  // Close dropdown if clicked outside
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setIsOpen(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token'); 
     toast.success("Logged out successfully");
     navigate('/login');
     setIsOpen(false);
+    setUser({ name: "", avatar: "" }); // Clear state
   };
+
+  // Get Token for conditional rendering of links
+  const token = localStorage.getItem('token');
 
   return (
     <>
@@ -72,7 +89,7 @@ const Navbar = () => {
       <nav style={{ 
         position: 'fixed', top: 0, left: 0, width: '100%', padding: '20px 40px', 
         display: 'flex', alignItems: 'center', zIndex: 1000, 
-       backdropFilter: 'blur(5px)', 
+        backdropFilter: 'blur(5px)', 
         boxSizing: 'border-box'
       }}>
         
@@ -110,25 +127,21 @@ const Navbar = () => {
             // --- PROFILE DROPDOWN ---
             <div style={{ position: 'relative' }} ref={dropdownRef}>
                 
-                {/* 1. The Avatar Button (UPDATED PART) */}
-               <button  onClick={() => setIsOpen(!isOpen)} 
+               <button onClick={() => setIsOpen(!isOpen)} 
                style={{ 
                 width: '45px', height: '45px', borderRadius: '50%', 
-                 // 👇 UPDATE THIS LINE (Added quotes inside url('...'))
-                background: user.avatar ? `url(${user.avatar})` : 'linear-gradient(135deg, #00d2d3, #2e86de)',
-              backgroundSize: 'cover', backgroundPosition: 'center',
-               border: '2px solid rgba(255,255,255,0.2)', 
-               // ... rest of styles
-                        color: 'white', fontWeight: 'bold', fontSize: '18px',
-                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 0 15px rgba(0,210,211,0.3)'
-                    }}
+                // 3. CORRECT CSS SYNTAX (No Quotes)
+                background: user.avatar ? `url(${user.avatar})` : 'linear-gradient(135deg, #00d2d3, #2e86de)', 
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                border: '2px solid rgba(255,255,255,0.2)', 
+                color: 'white', fontWeight: 'bold', fontSize: '18px',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 15px rgba(0,210,211,0.3)'
+                }}
                 >
-                    {/* If NO avatar, show the first letter of name. If avatar exists, show nothing */}
                     {!user.avatar && (user.name ? user.name.charAt(0).toUpperCase() : "U")}
                 </button>
 
-                {/* 2. The Dropdown Menu */}
                 {isOpen && (
                     <div className="glass-panel" style={{ 
                         position: 'absolute', top: '60px', right: '0', width: '220px', 
