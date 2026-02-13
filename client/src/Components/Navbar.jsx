@@ -115,7 +115,7 @@ const Navbar = () => {
                style={{ 
                 width: '45px', height: '45px', borderRadius: '50%', 
                  // 👇 UPDATE THIS LINE (Added quotes inside url('...'))
-                background: user.avatar ? `url('${user.avatar}')` : 'linear-gradient(135deg, #00d2d3, #2e86de)', 
+                background: user.avatar ? `url(${user.avatar})` : 'linear-gradient(135deg, #00d2d3, #2e86de)',
               backgroundSize: 'cover', backgroundPosition: 'center',
                border: '2px solid rgba(255,255,255,0.2)', 
                // ... rest of styles

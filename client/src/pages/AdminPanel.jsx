@@ -58,7 +58,7 @@ const AdminPanel = () => {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '120px 40px 40px 40px', maxWidth: '1200px', margin: '0 auto' }}>
       <h1 style={{ color: '#00d2d3', marginBottom: '30px', textShadow: '0 0 10px rgba(0,210,211,0.5)' }}>
         🛡️ Admin Control Center
       </h1>
