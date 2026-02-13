@@ -25,7 +25,12 @@ const Login = () => {
         const json = await response.json();
 
         if (json.authToken) {
+            // 1. Save Token
             localStorage.setItem('token', json.authToken);
+            
+            // 2. 👇 CRITICAL FIX: Tell Navbar to wake up and fetch data immediately
+            window.dispatchEvent(new Event("userUpdated"));
+
             toast.success("Identity Verified. Welcome back.", {
                 style: { background: '#0f172a', color: '#00d2d3', border: '1px solid #00d2d3' },
                 icon: 'Fn'
@@ -105,7 +110,7 @@ const Login = () => {
               type="email" 
               name="email" 
               onChange={onChange} 
-              style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155' }} 
+              style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155', color: 'white', padding: '10px', borderRadius: '5px' }} 
               placeholder="researcher@institute.edu"
               required 
             />
@@ -117,7 +122,7 @@ const Login = () => {
               type="password" 
               name="password" 
               onChange={onChange} 
-              style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155' }} 
+              style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155', color: 'white', padding: '10px', borderRadius: '5px' }} 
               placeholder="••••••••"
               required 
             />
@@ -128,7 +133,7 @@ const Login = () => {
             whileTap={{ scale: 0.98 }}
             type="submit" 
             className="btn-neon" 
-            style={{ width: '100%', padding: '12px', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}
+            style={{ width: '100%', padding: '12px', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
             disabled={loading}
           >
             {loading ? "Authenticating..." : "Initialize Session →"}

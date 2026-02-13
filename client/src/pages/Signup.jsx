@@ -42,7 +42,12 @@ const Signup = () => {
       const json = await response.json();
   
       if (json.authToken) {
+        // 1. Save Token
         localStorage.setItem('token', json.authToken);
+        
+        // 2. 👇 CRITICAL FIX: Tell Navbar to wake up immediately
+        window.dispatchEvent(new Event("userUpdated"));
+
         toast.success("Identity Created. Welcome to the Network.", { icon: 'Fn' });
         navigate("/"); 
       } else {
