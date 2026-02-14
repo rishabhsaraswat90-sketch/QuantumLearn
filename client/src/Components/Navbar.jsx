@@ -58,25 +58,36 @@ const Navbar = () => {
     <>
       <style>
         {`
-          /* --- DESKTOP STYLES (The Original Design) --- */
+          /* --- DESKTOP STYLES (Laptop/PC) --- */
           .nav-container {
-            position: fixed; top: 0; left: 0; width: 100%; padding: 20px 40px;
+            position: fixed; top: 0; left: 0; width: 100%; padding: 25px 50px;
             display: flex; align-items: center; justify-content: space-between;
-            z-index: 1000; backdrop-filter: blur(10px); background: rgba(15, 23, 42, 0.6);
-            box-sizing: border-box; transition: all 0.3s ease;
+            z-index: 1000; 
+            background: transparent; /* FIXED: No background color */
+            backdrop-filter: none;   /* FIXED: No blur on the full strip */
+            box-sizing: border-box;
           }
 
           .nav-logo {
             text-decoration: none; font-size: 26px; fontWeight: 900; letter-spacing: 1px;
             background: linear-gradient(to right, #00d2d3, #ff9ff3);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            z-index: 1002; /* Ensure logo stays above */
           }
 
+          /* FIXED: Absolute Center for Perfect Alignment */
           .desktop-menu {
+            position: absolute; 
+            left: 50%; 
+            transform: translateX(-50%); /* Moves it to exact center */
+            
             display: flex; gap: 30px; align-items: center;
-            background: rgba(255,255,255,0.03); padding: 12px 30px;
-            border-radius: 50px; border: 1px solid rgba(255,255,255,0.05);
-            backdrop-filter: blur(5px);
+            background: rgba(15, 23, 42, 0.6); /* Keep pill background for readability */
+            padding: 12px 40px;
+            border-radius: 50px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
           }
 
           .nav-link { 
@@ -85,11 +96,15 @@ const Navbar = () => {
           }
           .nav-link:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
           
-          .hamburger { display: none; background: none; border: none; color: white; font-size: 28px; cursor: pointer; }
+          .hamburger { display: none; background: none; border: none; color: white; font-size: 28px; cursor: pointer; z-index: 1002; }
 
-          /* --- MOBILE STYLES (Responsiveness) --- */
+          /* --- MOBILE STYLES (Phones/Tablets) --- */
           @media (max-width: 900px) {
-            .nav-container { padding: 15px 20px; }
+            .nav-container { 
+                padding: 15px 20px; 
+                background: rgba(15, 23, 42, 0.9); /* Mobile needs background */
+                backdrop-filter: blur(10px);
+            }
             .desktop-menu { display: none; } /* Hide Pill Menu */
             .hamburger { display: block; }   /* Show Hamburger */
             .nav-logo { font-size: 22px; }
@@ -112,7 +127,7 @@ const Navbar = () => {
         {/* 1. LOGO */}
         <Link to="/" className="nav-logo">QuantumLearn</Link>
 
-        {/* 2. DESKTOP CENTER MENU (The Pill) */}
+        {/* 2. DESKTOP CENTER MENU (The Pill - Now Perfectly Centered) */}
         <div className="desktop-menu">
           <Link to="/" className="nav-link">Home</Link>
           <Link to="/about" className="nav-link">About</Link>
@@ -124,7 +139,6 @@ const Navbar = () => {
               <Link to="/dashboard" className="nav-link" style={{ color: '#00d2d3' }}>Dashboard</Link>
               <Link to="/simulator" className="nav-link" style={{ color: '#ff9ff3' }}>Simulator</Link>
               
-              {/* 👇 FIXED: Check for "Admin" (Capital A) OR "admin" (lowercase) */}
               {(user.role === "Admin" || user.role === "admin") && ( 
                 <Link to="/admin" className="nav-link" style={{ color: '#ff4757', fontWeight: 'bold' }}>
                   Admin Panel
@@ -135,7 +149,7 @@ const Navbar = () => {
         </div>
 
         {/* 3. RIGHT SIDE (Profile or Login) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', zIndex: 1002 }}>
           
           {/* HAMBURGER BUTTON (Mobile Only) */}
           <button className="hamburger" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -160,23 +174,38 @@ const Navbar = () => {
                 background: user.avatar ? `url(${user.avatar})` : 'linear-gradient(135deg, #00d2d3, #2e86de)', 
                 backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
                 border: '2px solid rgba(255,255,255,0.2)', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '18px'
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '18px',
+                boxShadow: '0 0 15px rgba(0,210,211,0.3)'
                }}>
                     {!user.avatar && (user.name ? user.name.charAt(0).toUpperCase() : "U")}
                </button>
 
-               {/* DESKTOP DROPDOWN */}
+               {/* RESTORED: The "Neon/Glass" Dropdown */}
                {isOpen && (
                    <div className="glass-panel" style={{ 
-                       position: 'absolute', top: '60px', right: '0', width: '220px', padding: '10px', borderRadius: '15px', 
-                       background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)'
+                       position: 'absolute', top: '60px', right: '0', width: '240px', 
+                       padding: '15px', borderRadius: '15px', 
+                       background: 'rgba(15, 23, 42, 0.95)', 
+                       border: '1px solid rgba(0, 210, 211, 0.2)', // Neon border
+                       boxShadow: '0 0 20px rgba(0,0,0,0.5)'
                    }}>
-                       <div style={{ padding: '10px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#64748b', fontSize: '12px' }}>
-                           SIGNED IN AS <br/><span style={{ color: 'white', fontSize: '14px' }}>{user.name}</span>
+                       <div style={{ paddingBottom: '10px', marginBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#64748b', fontSize: '12px', letterSpacing: '1px' }}>
+                           CURRENTLY LOGGED IN AS <br/>
+                           <span style={{ color: 'white', fontSize: '15px', fontWeight: 'bold', display:'block', marginTop:'5px' }}>{user.name || "User"}</span>
                        </div>
-                       <Link to="/profile" className="dropdown-item" onClick={() => setIsOpen(false)}>👤 My Profile</Link>
-                       <Link to="/change-password" className="dropdown-item" onClick={() => setIsOpen(false)}>🔒 Change Password</Link>
-                       <div className="dropdown-item" onClick={handleLogout} style={{ color: '#ff4757' }}>🚪 Logout</div>
+                       
+                       <Link to="/profile" className="dropdown-item" onClick={() => setIsOpen(false)} style={{ display:'block', padding:'10px', color:'#ccc', textDecoration:'none', borderRadius:'8px', transition:'0.2s' }}>
+                            👤 My Profile
+                       </Link>
+                       <Link to="/change-password" className="dropdown-item" onClick={() => setIsOpen(false)} style={{ display:'block', padding:'10px', color:'#ccc', textDecoration:'none', borderRadius:'8px', transition:'0.2s' }}>
+                            🔒 Change Password
+                       </Link>
+                       
+                       <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
+
+                       <div onClick={handleLogout} style={{ padding:'10px', color:'#ff4757', cursor:'pointer', borderRadius:'8px', fontWeight:'bold', display:'flex', alignItems:'center', gap:'10px' }}>
+                           🚪 Sign Out
+                       </div>
                    </div>
                )}
             </div>
@@ -184,7 +213,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* 4. MOBILE MENU (Only visible on small screens) */}
+      {/* MOBILE MENU (Unchanged) */}
       {mobileOpen && (
           <div className="mobile-dropdown">
               <Link to="/" onClick={() => setMobileOpen(false)} style={{color:'white', textDecoration:'none', fontSize:'18px'}}>Home</Link>
