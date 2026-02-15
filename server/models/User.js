@@ -9,8 +9,11 @@ const UserSchema = new Schema({
     role: { type: String, default: "Researcher" },
     avatar: { 
         type: String, 
-        default: "" // Stores the URL of the image
-    } 
+        default: "" 
+    },
+    // 👇 ADD THESE TWO NEW FIELDS
+    otp: { type: String, default: null },
+    otpExpires: { type: Date, default: null }
 });
 
 const User = mongoose.model('user', UserSchema);

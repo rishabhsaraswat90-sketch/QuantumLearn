@@ -100,7 +100,11 @@ const Login = () => {
             <label style={{ color: '#00d2d3', fontSize: '0.8rem', fontWeight: 'bold' }}>Qm-KEY (PASSWORD)</label>
             <input type="password" name="password" onChange={onChange} style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155', color:'white', padding:'10px' }} required />
           </div>
-          
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+    <Link to="/forgot-password" style={{ color: '#00d2d3', fontSize: '0.8rem', textDecoration: 'none' }}>
+        Forgot Password?
+    </Link>
+</div>
           <button type="submit" className="btn-neon" style={{ width: '100%', padding: '12px' }} disabled={loading}>
             {loading ? "Authenticating..." : "Initialize Session →"}
           </button>

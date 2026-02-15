@@ -18,10 +18,12 @@ import About from "./pages/About";
 import Services from "./pages/Services"; 
 import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyOtp from "./pages/VerifyOtp";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
-    // ❌ REMOVED <Router> wrapper here
     <div
       style={{
         minHeight: "100vh",
@@ -30,8 +32,6 @@ function App() {
         background: "var(--bg-dark)",
       }}
     >
-      {/* ❌ REMOVED <Toaster /> here (It's already in main.jsx) */}
-      
       <Navbar />
       
       <Routes>
@@ -45,11 +45,13 @@ function App() {
         <Route path="/services" element={<Services />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-otp" element={<VerifyOtp />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
       
       <Footer /> 
     </div>
-    // ❌ REMOVED </Router> wrapper here
   );
 }
 

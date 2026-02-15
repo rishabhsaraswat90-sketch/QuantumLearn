@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const sendEmail = require('../utils/sendEmail');
 
 // SECRET KEY (In real life, put this in .env)
 const JWT_SECRET = 'QuantumSecretKey2026'; 
@@ -175,6 +176,96 @@ router.post('/google', async (req, res) => {
 
     } catch (error) {
         console.error("Google Auth Error:", error.message);
+        res.status(500).send("Internal Server Error");
+    }
+});
+// --- FORGOT PASSWORD ROUTES ---
+
+// ROUTE 7: Send OTP to Email (POST /api/auth/forgotpassword). No login required.
+router.post('/forgotpassword', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        // 1. Check if user exists
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // 2. Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // 3. Save OTP to Database (Expires in 10 minutes)
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 mins from now
+        await user.save();
+
+        // 4. Send Email
+        const subject = "Password Reset - QuantumLearn";
+        const message = `Your Verification Code is: ${otp}\n\nThis code expires in 10 minutes.\nIf you did not request this, please ignore this email.`;
+        
+        await sendEmail(user.email, subject, message);
+
+        res.json({ success: true, message: "OTP sent to email" });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// ROUTE 8: Verify OTP (POST /api/auth/verifyotp). No login required.
+router.post('/verifyotp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Check if OTP matches and hasn't expired
+        if (user.otp !== otp || user.otpExpires < Date.now()) {
+            return res.status(400).json({ error: "Invalid or Expired OTP" });
+        }
+
+        res.json({ success: true, message: "OTP Verified" });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// ROUTE 9: Reset Password (POST /api/auth/resetpassword). No login required.
+router.post('/resetpassword', async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Security Check: Verify OTP *again* before changing password
+        if (user.otp !== otp || user.otpExpires < Date.now()) {
+            return res.status(400).json({ error: "Invalid or Expired OTP. Please try again." });
+        }
+
+        // Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        const securedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update User
+        user.password = securedPassword;
+        user.otp = null;       // Clear the OTP so it can't be used twice
+        user.otpExpires = null;
+        await user.save();
+
+        res.json({ success: true, message: "Password Changed Successfully" });
+
+    } catch (error) {
+        console.error(error);
         res.status(500).send("Internal Server Error");
     }
 });
