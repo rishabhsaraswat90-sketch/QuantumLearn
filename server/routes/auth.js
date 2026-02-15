@@ -134,5 +134,49 @@ router.put('/changepassword', fetchuser, async (req, res) => {
         res.status(500).send("Internal Server Error");
     }
 });
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// ROUTE 4: Google Login: POST "/api/auth/google". No login required
+router.post('/google', async (req, res) => {
+    try {
+        const { token } = req.body;
+        
+        // 1. Verify the token with Google
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID, 
+        });
+        const { name, email, picture } = ticket.getPayload();
+
+        // 2. Check if user already exists
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            // 3. If new user, create them with a random password
+            const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+            const salt = await bcrypt.genSalt(10);
+            const securedPassword = await bcrypt.hash(randomPassword, salt);
+
+            user = await User.create({
+                name: name,
+                email: email,
+                password: securedPassword,
+                avatar: picture,
+                role: "Researcher"
+            });
+        }
+
+        // 4. Generate Auth Token
+        const data = { user: { id: user.id } };
+        const authToken = jwt.sign(data, JWT_SECRET);
+
+        res.json({ success: true, authToken });
+
+    } catch (error) {
+        console.error("Google Auth Error:", error.message);
+        res.status(500).send("Internal Server Error");
+    }
+});
 
 module.exports = router;
