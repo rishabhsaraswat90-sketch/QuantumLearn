@@ -3,13 +3,15 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (email, subject, text) => {
     try {
         const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com", // 1. Force the host
-            port: 465,              // 2. Force the Secure Port
-            secure: true,           // 3. Use SSL
+            host: "smtp.gmail.com", 
+            port: 465,             
+            secure: true,          
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
-            }
+            },
+            // 👇 THIS IS THE FIX
+            family: 4 // Forces the code to use IPv4 instead of IPv6
         });
 
         console.log("Attempting to send email to:", email);
@@ -26,7 +28,7 @@ const sendEmail = async (email, subject, text) => {
 
     } catch (error) {
         console.error("Email Error:", error);
-        throw error; // Throwing ensures the frontend gets the error
+        throw error; 
     }
 };
 
