@@ -269,5 +269,30 @@ router.post('/resetpassword', async (req, res) => {
         res.status(500).send("Internal Server Error");
     }
 });
+// ROUTE 7: Send OTP to Email
+router.post('/forgotpassword', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        const subject = "Password Reset - QuantumLearn";
+        const message = `Your Verification Code is: ${otp}\n\nThis code expires in 10 minutes.`;
+        
+        // 👇 ADDED AWAIT AND ERROR HANDLING
+        await sendEmail(user.email, subject, message);
+
+        res.json({ success: true, message: "OTP sent to email" });
+
+    } catch (error) {
+        console.error("OTP Error:", error);
+        res.status(500).json({ error: "Email could not be sent. Check server logs." });
+    }
+});
 
 module.exports = router;
