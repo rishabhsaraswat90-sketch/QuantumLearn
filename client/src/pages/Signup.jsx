@@ -10,7 +10,7 @@ const Signup = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // --- GOOGLE SIGNUP LOGIC ---
+  // --- GOOGLE SIGNUP LOGIC (Auto-Verified) ---
   const handleGoogleSignup = async (credentialResponse) => {
     try {
         const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/google", {
@@ -34,7 +34,7 @@ const Signup = () => {
     }
   };
 
-  // --- MANUAL SIGNUP LOGIC ---
+  // --- MANUAL SIGNUP LOGIC (Requires Verification) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -68,11 +68,11 @@ const Signup = () => {
   
       const json = await response.json();
   
-      if (json.authToken) {
-        localStorage.setItem('token', json.authToken);
-        window.dispatchEvent(new Event("userUpdated"));
-        toast.success("Identity Created. Welcome to the Network.", { icon: 'Fn' });
-        navigate("/"); 
+      // 👇 UPDATED LOGIC: Check for success flag, not authToken
+      if (json.success) {
+        toast.success("Code Sent! Check your Email to activate.");
+        // Redirect to Verification Page passing the email
+        navigate("/verify-email", { state: { email: credentials.email } });
       } else {
         toast.error(json.error || "Registration Failed");
       }

@@ -7,13 +7,17 @@ const UserSchema = new Schema({
     password: { type: String, required: true },
     date: { type: Date, default: Date.now },
     role: { type: String, default: "Researcher" },
-    avatar: { 
-        type: String, 
-        default: "" 
-    },
-    // 👇 ADD THESE TWO NEW FIELDS
+    avatar: { type: String, default: "" },
+    
+    // 👇 OTP Fields
     otp: { type: String, default: null },
-    otpExpires: { type: Date, default: null }
+    otpExpires: { type: Date, default: null },
+    
+    // 👇 NEW FIELD: Verification Status
+    isVerified: { 
+        type: Boolean, 
+        default: false 
+    }
 });
 
 const User = mongoose.model('user', UserSchema);

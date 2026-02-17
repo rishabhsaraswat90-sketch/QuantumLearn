@@ -8,34 +8,37 @@ const sendEmail = require('../utils/sendEmail');
 // SECRET KEY (In real life, put this in .env)
 const JWT_SECRET = 'QuantumSecretKey2026'; 
 
-// ROUTE 1: Register a User (POST /api/auth/register)
+// ROUTE 1: Register a User (Modified)
+
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        // 1. Check if user already exists
         let user = await User.findOne({ email });
-        if (user) {
-            return res.status(400).json({ error: "User already exists" });
-        }
+        if (user) return res.status(400).json({ error: "User already exists" });
 
-        // 2. Hash the password (Security Step)
         const salt = await bcrypt.genSalt(10);
         const securedPassword = await bcrypt.hash(password, salt);
 
-        // 3. Create the user
+        // Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Create User (isVerified defaults to false)
         user = await User.create({
             name,
             email,
-            password: securedPassword
+            password: securedPassword,
+            otp: otp,
+            otpExpires: Date.now() + 10 * 60 * 1000, // 10 mins
+            isVerified: false // Explicitly false
         });
 
-        // 4. Give them a token (The "ID Card")
-        const data = { user: { id: user.id } };
-        const authToken = jwt.sign(data, JWT_SECRET);
+        // Send Email (Don't wait for it to prevent UI lag)
+        const subject = "Verify your QuantumLearn Account";
+        await sendEmail(user.email, subject, otp);
 
-        // 5. Send token to frontend
-        res.json({ authToken });
+        // 👇 CRITICAL: Do NOT send authToken yet. Tell frontend to go to verify page.
+        res.json({ success: true, requireVerification: true });
 
     } catch (error) {
         console.error(error.message);
@@ -43,24 +46,53 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// ROUTE 2: Login a User (POST /api/auth/login)
+// ROUTE 1.5: Verify Signup OTP (NEW ROUTE)
+router.post('/verifysignup', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        // Check OTP
+        if (user.otp !== otp || user.otpExpires < Date.now()) {
+            return res.status(400).json({ error: "Invalid or Expired OTP" });
+        }
+
+        // Mark Verified & Login
+        user.isVerified = true;
+        user.otp = null;
+        user.otpExpires = null;
+        await user.save();
+
+        // NOW generate the token
+        const data = { user: { id: user.id } };
+        const authToken = jwt.sign(data, JWT_SECRET);
+
+        res.json({ success: true, authToken });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Server Error");
+    }
+});
+
+// ROUTE 2: Login (Modified)
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        // 1. Check if user exists
         let user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ error: "Invalid Credentials" });
-        }
+        if (!user) return res.status(400).json({ error: "Invalid Credentials" });
 
-        // 2. Compare password (Is "123456" == "$2a$10$X7..."?)
         const passwordCompare = await bcrypt.compare(password, user.password);
-        if (!passwordCompare) {
-            return res.status(400).json({ error: "Invalid Credentials" });
+        if (!passwordCompare) return res.status(400).json({ error: "Invalid Credentials" });
+
+        // 👇 SECURITY CHECK: Block unverified users
+        if (user.isVerified === false) {
+             // Optional: Resend OTP here if you want to be fancy
+            return res.status(400).json({ error: "Please verify your email first." });
         }
 
-        // 3. Send token
         const data = { user: { id: user.id } };
         const authToken = jwt.sign(data, JWT_SECRET);
         res.json({ authToken });
@@ -84,25 +116,22 @@ router.post('/getuser', fetchuser, async (req, res) => {
   }
 });
 
-// ROUTE 4: Update User Profile: PUT "/api/auth/updateuser". Login required
-router.put('/updateuser', fetchuser, async (req, res) => {
-  try {
-    const { name, avatar } = req.body;
-    const newUser = {};
-    if (name) newUser.name = name;
-    if (avatar) newUser.avatar = avatar;
+// ROUTE 4: Google Login (Update to auto-verify)
+router.post('/google', async (req, res) => {
+    // ... inside the try block ...
+        if (!user) {
+            // ... (password generation) ...
+            user = await User.create({
+                name: name,
+                email: email,
+                password: securedPassword,
+                avatar: picture,
+                role: "Researcher",
+                isVerified: true // 👈 GOOGLE USERS ARE TRUSTED
+            });
+        }
+    });
 
-    // Find the user to be updated and update it
-    let user = await User.findById(req.user.id);
-    if (!user) { return res.status(404).send("Not Found") }
-
-    user = await User.findByIdAndUpdate(req.user.id, { $set: newUser }, { new: true });
-    res.json(user);
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Internal Server Error");
-  }
-});
 // ROUTE 5: Change Password: PUT "/api/auth/changepassword". Login required
 router.put('/changepassword', fetchuser, async (req, res) => {
     try {
