@@ -1,40 +1,37 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 const sendEmail = async (email, subject, text) => {
-    console.log("--- Email Service Starting ---");
-    console.log("Strategy: Service 'Gmail' (Auto-Config) / IPv4");
+    console.log("--- Email Service (EmailJS HTTP) Starting ---");
 
     try {
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',       // 👈 LET NODEMAILER HANDLE THE PORTS
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            },
-            // Network Settings
-            family: 4,              // Force IPv4 (Critical for Render)
-            logger: true,           // Keep logs on
-            debug: true,            // Keep debug on
-            connectionTimeout: 10000 // 10 second timeout
-        });
+        // Prepare the data for EmailJS
+        const data = {
+            service_id: process.env.EMAILJS_SERVICE_ID,
+            template_id: process.env.EMAILJS_TEMPLATE_ID,
+            user_id: process.env.EMAILJS_PUBLIC_KEY,
+            accessToken: process.env.EMAILJS_PRIVATE_KEY,
+            template_params: {
+                to_email: email,      // The user's email
+                to_name: "Researcher", // Generic name or pass it in
+                otp: text,            // The OTP code
+                subject: subject
+            }
+        };
 
-        console.log(`Attempting to send email to: ${email}`);
+        // Send HTTP Request (Port 443 - Never Blocked)
+        await axios.post('https://api.emailjs.com/api/v1.0/email/send', data);
 
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: subject,
-            text: text
-        });
-
-        console.log("✅ Email sent successfully");
+        console.log("✅ Email sent successfully via EmailJS");
         return true;
 
     } catch (error) {
         console.error("❌ EMAIL FAILED");
-        console.error("Error Code:", error.code);
-        console.error("Error Message:", error.message);
-        throw error; 
+        if (error.response) {
+            console.error("EmailJS Error:", error.response.data);
+        } else {
+            console.error("Error Message:", error.message);
+        }
+        throw error;
     }
 };
 

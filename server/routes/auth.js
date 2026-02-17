@@ -285,7 +285,7 @@ router.post('/forgotpassword', async (req, res) => {
         const message = `Your Verification Code is: ${otp}\n\nThis code expires in 10 minutes.`;
         
         // 👇 ADDED AWAIT AND ERROR HANDLING
-        await sendEmail(user.email, subject, message);
+        await sendEmail(user.email, subject, otp);
 
         res.json({ success: true, message: "OTP sent to email" });
 
