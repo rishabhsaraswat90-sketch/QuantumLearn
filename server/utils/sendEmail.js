@@ -2,21 +2,20 @@ const nodemailer = require('nodemailer');
 
 const sendEmail = async (email, subject, text) => {
     console.log("--- Email Service Starting ---");
-    console.log("Strategy: Port 465 (SSL) / IPv4");
+    console.log("Strategy: Service 'Gmail' (Auto-Config) / IPv4");
 
     try {
         const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,              // 👈 SWITCH BACK TO 465
-            secure: true,           // 👈 TRUE for Port 465
+            service: 'gmail',       // 👈 LET NODEMAILER HANDLE THE PORTS
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
             },
-            family: 4,              // 👈 KEEP THIS (Forces IPv4)
-            logger: true,           
-            debug: true,
-            connectionTimeout: 10000 // 👈 Fail fast (10s) instead of waiting 2 mins
+            // Network Settings
+            family: 4,              // Force IPv4 (Critical for Render)
+            logger: true,           // Keep logs on
+            debug: true,            // Keep debug on
+            connectionTimeout: 10000 // 10 second timeout
         });
 
         console.log(`Attempting to send email to: ${email}`);
