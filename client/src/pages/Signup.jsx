@@ -2,17 +2,44 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+// 👇 Import Google Component
+import { GoogleLogin } from '@react-oauth/google';
 
 const Signup = () => {
   const [credentials, setCredentials] = useState({ name: "", email: "", password: "" });
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
+  // --- GOOGLE SIGNUP LOGIC ---
+  const handleGoogleSignup = async (credentialResponse) => {
+    try {
+        const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/google", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: credentialResponse.credential })
+        });
+        const json = await response.json();
+        
+        if (json.success) {
+            localStorage.setItem('token', json.authToken);
+            window.dispatchEvent(new Event("userUpdated")); 
+            toast.success("Identity Created via Google Protocol");
+            navigate("/");
+        } else {
+            toast.error("Google Registration Failed");
+        }
+    } catch (error) {
+        console.error(error);
+        toast.error("Server Error");
+    }
+  };
+
+  // --- MANUAL SIGNUP LOGIC ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // --- 1. VALIDATION ---
+    // 1. VALIDATION
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(credentials.email)) {
         toast.error("Invalid Email Format");
@@ -27,7 +54,7 @@ const Signup = () => {
         return;
     }
     
-    // --- 2. API CALL ---
+    // 2. API CALL
     try {
       const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/register", {
         method: "POST",
@@ -42,12 +69,8 @@ const Signup = () => {
       const json = await response.json();
   
       if (json.authToken) {
-        // 1. Save Token
         localStorage.setItem('token', json.authToken);
-        
-        // 2. 👇 CRITICAL FIX: Tell Navbar to wake up immediately
         window.dispatchEvent(new Event("userUpdated"));
-
         toast.success("Identity Created. Welcome to the Network.", { icon: 'Fn' });
         navigate("/"); 
       } else {
@@ -74,7 +97,7 @@ const Signup = () => {
       overflow: 'hidden'
     }}>
       
-      {/* Background Decoration (Same as Login) */}
+      {/* Background Decoration */}
       <motion.div 
         animate={{ rotate: -360 }}
         transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
@@ -118,21 +141,34 @@ const Signup = () => {
             <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Join the QuantumLearn Network</p>
         </div>
 
+        {/* 👇 GOOGLE SIGNUP BUTTON */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+            <GoogleLogin
+                onSuccess={handleGoogleSignup}
+                onError={() => toast.error("Registration Failed")}
+                text="signup_with" 
+                theme="filled_black"
+                shape="pill"
+                width="300"
+            />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#64748b', fontSize: '0.8rem' }}>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>OR<div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           
-          {/* Name Input */}
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>FULL DESIGNATION (NAME)</label>
             <input type="text" name="name" onChange={onChange} style={inputStyle} placeholder="Dr. Heisenberg" required />
           </div>
 
-          {/* Email Input */}
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>EMAIL PROTOCOL</label>
             <input type="email" name="email" onChange={onChange} style={inputStyle} placeholder="user@lab.com" required />
           </div>
           
-          {/* Password Input */}
           <div style={{ marginBottom: '30px' }}>
             <label style={labelStyle}>SECURE KEY</label>
             <input type="password" name="password" onChange={onChange} style={inputStyle} placeholder="••••••••" required />
@@ -141,7 +177,6 @@ const Signup = () => {
             </div>
           </div>
           
-          {/* Submit Button */}
           <motion.button 
             whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(0,210,211,0.3)' }}
             whileTap={{ scale: 0.98 }}
@@ -180,7 +215,7 @@ const inputStyle = {
     borderRadius: '8px', 
     color: 'white', 
     outline: 'none',
-    fontFamily: 'monospace' // Makes it look techy
+    fontFamily: 'monospace' 
 };
 
 export default Signup;
