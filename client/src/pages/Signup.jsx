@@ -64,12 +64,12 @@ const Signup = () => {
   const onChange = (e) => setCredentials({ ...credentials, [e.target.name]: e.target.value });
 
   return (
-    // 👇 FIX: minHeight, overflowX hidden, mobile padding
-    <div style={{ padding: '80px 20px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)', overflowX: 'hidden' }}>
+    // 👇 FIX: Same block layout structure to allow mobile scrolling
+    <div style={{ paddingTop: '120px', paddingBottom: '60px', paddingLeft: '20px', paddingRight: '20px', minHeight: '100vh', background: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)', overflowX: 'hidden', position: 'relative' }}>
       
-      <motion.div animate={{ rotate: -360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} style={{ position: 'absolute', width: '900px', height: '900px', border: '1px dashed rgba(0, 210, 211, 0.1)', borderRadius: '50%', zIndex: 0 }} />
+      <motion.div animate={{ rotate: -360 }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} style={{ position: 'fixed', top: '10%', left: '50%', transform: 'translateX(-50%)', width: '900px', height: '900px', border: '1px dashed rgba(0, 210, 211, 0.1)', borderRadius: '50%', zIndex: 0, pointerEvents: 'none' }} />
 
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel" style={{ padding: '40px 20px', width: '100%', maxWidth: '450px', borderRadius: '20px', boxShadow: '0 0 50px rgba(0,0,0,0.6)', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.1)' }}>
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel" style={{ margin: '0 auto', padding: '40px 20px', width: '100%', maxWidth: '450px', borderRadius: '20px', boxShadow: '0 0 50px rgba(0,0,0,0.6)', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h2 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(to right, #00d2d3, #fff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>New Researcher</h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Join the QuantumLearn Network</p>

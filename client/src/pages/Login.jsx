@@ -56,13 +56,13 @@ const Login = () => {
   const onChange = (e) => setCredentials({ ...credentials, [e.target.name]: e.target.value });
 
   return (
-    // 👇 FIX: minHeight instead of height, overflowX hidden but allows vertical scroll, responsive padding
-    <div style={{ padding: '80px 20px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)', overflowX: 'hidden' }}>
+    // 👇 FIX: Abandoned Flexbox centering. Using standard block layout with heavy padding.
+    <div style={{ paddingTop: '120px', paddingBottom: '60px', paddingLeft: '20px', paddingRight: '20px', minHeight: '100vh', background: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)', overflowX: 'hidden', position: 'relative' }}>
       
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} style={{ position: 'absolute', width: '800px', height: '800px', border: '1px solid rgba(0, 210, 211, 0.05)', borderRadius: '50%', zIndex: 0 }} />
+      <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} style={{ position: 'fixed', top: '10%', left: '50%', transform: 'translateX(-50%)', width: '800px', height: '800px', border: '1px solid rgba(0, 210, 211, 0.05)', borderRadius: '50%', zIndex: 0, pointerEvents: 'none' }} />
 
-      {/* 👇 FIX: Card padding reduced for mobile */}
-      <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="glass-panel" style={{ padding: '40px 20px', width: '100%', maxWidth: '400px', borderRadius: '20px', position: 'relative', zIndex: 1 }}>
+      {/* 👇 FIX: margin: '0 auto' centers it horizontally without causing vertical cutoff */}
+      <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="glass-panel" style={{ margin: '0 auto', padding: '40px 20px', width: '100%', maxWidth: '400px', borderRadius: '20px', position: 'relative', zIndex: 1, border: '1px solid rgba(255,255,255,0.1)' }}>
         <h2 style={{ textAlign: 'center', margin: '0 0 30px 0', fontSize: '2rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             System Login
         </h2>
@@ -100,4 +100,5 @@ const Login = () => {
     </div>
   );
 }
+
 export default Login;
