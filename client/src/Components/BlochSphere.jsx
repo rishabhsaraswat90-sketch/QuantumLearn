@@ -73,7 +73,7 @@ const BlochSphere = ({ theta = 0, phi = 0 }) => {
   return (
     <div style={{ width: '100%', height: '100%', minHeight: '350px', background: 'transparent' }}>
       <Canvas camera={{ position: [3.5, 2.5, 4.5], fov: 45 }} gl={{ antialias: true }}>
-        <color attach="background" args={['transparent']} />
+       <color attach="background" args={['#0f172a']} />
         
         {/* Dark moody lighting */}
         <ambientLight intensity={0.2} />
