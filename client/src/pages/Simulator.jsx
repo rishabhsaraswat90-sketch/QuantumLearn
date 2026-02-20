@@ -1,25 +1,22 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { useLocation, useNavigate } from 'react-router-dom'; // Add these
+import { useLocation, useNavigate } from 'react-router-dom';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const Simulator = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // 👇 NEW: Check if we received data from the Dashboard
+  // --- Logic State (Untouched) ---
   const [circuit, setCircuit] = useState(location.state?.circuitData || [[], []]); 
-  const [circuitId, setCircuitId] = useState(location.state?.id || null); // Tracks if this is an existing project
+  const [circuitId, setCircuitId] = useState(location.state?.id || null); 
   const [projectTitle, setProjectTitle] = useState(location.state?.title || ""); 
-
   const [results, setResults] = useState(null);     
   const [loading, setLoading] = useState(false);
 
   const addQubit = () => {
-    if (circuit.length >= 5) {
-        toast.error("Max 5 Qubits allowed in Demo Mode");
-        return;
-    }
+    if (circuit.length >= 5) return toast.error("Max 5 Qubits allowed in Demo Mode");
     setCircuit([...circuit, []]);
   };
   
@@ -44,150 +41,158 @@ const Simulator = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ circuitData: circuit })
       });
-      
       const json = await response.json();
       if (json.success) {
-        setResults(json.results);
+        // Format data for Recharts
+        const chartData = json.results.map(r => ({
+            state: `|${r.state}⟩`,
+            probability: parseFloat((r.probability * 100).toFixed(2))
+        }));
+        setResults(chartData);
         toast.success("Simulation Complete", { icon: '⚡' });
-      } else {
-        toast.error("Simulation Failed");
-      }
+      } else toast.error("Simulation Failed");
     } catch (error) {
       toast.error("Server Connection Error");
     }
     setLoading(false);
   };
 
-  // 👇 NEW: Save OR Update Logic
   const handleSave = async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error("Login to Save Circuits");
-      return;
-    }
+    if (!token) return toast.error("Login to Save Circuits");
 
-    // If it's a new project, ask for a name. Otherwise, keep current name.
     let title = projectTitle;
     if (!circuitId) {
         title = prompt("Project Name:");
-        if (!title) return; // User cancelled
+        if (!title) return; 
         setProjectTitle(title);
     }
 
     try {
-      // Determine URL and Method based on if we have an ID
-      const url = circuitId 
-        ? `https://quantumlearn-api.onrender.com/api/simulation/update/${circuitId}` 
-        : `https://quantumlearn-api.onrender.com/api/simulation/save`;
-      
+      const url = circuitId ? `https://quantumlearn-api.onrender.com/api/simulation/update/${circuitId}` : `https://quantumlearn-api.onrender.com/api/simulation/save`;
       const method = circuitId ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method: method,
-        headers: {
-          "Content-Type": "application/json",
-          "auth-token": token
-        },
+        headers: { "Content-Type": "application/json", "auth-token": token },
         body: JSON.stringify({ title, circuitData: circuit })
       });
-
       const json = await response.json();
       
-      // If saving a new circuit, grab the new ID so future saves act as updates
       if (json._id || json.circuit) {
         if (!circuitId) setCircuitId(json._id); 
         toast.success(circuitId ? "Project Updated" : "Project Saved to Cloud ☁️");
-      } else {
-        toast.error("Save Failed");
-      }
+      } else toast.error("Save Failed");
     } catch (error) {
       toast.error("Server Error");
     }
   };
 
+  // --- Custom Tooltip for the Chart ---
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ background: '#0f172a', border: '1px solid #00d2d3', padding: '10px', borderRadius: '8px', color: '#fff' }}>
+          <p style={{ margin: 0, fontWeight: 'bold' }}>State: {label}</p>
+          <p style={{ margin: 0, color: '#00d2d3' }}>Probability: {payload[0].value}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div style={{ padding: '120px 40px 40px 40px', maxWidth: '1200px', margin: '0 auto', color: 'white' }}>
+    <div style={{ padding: '100px 20px 40px 20px', maxWidth: '1200px', margin: '0 auto', color: 'white', fontFamily: 'Inter, sans-serif' }}>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h2 style={{ margin: 0, background: 'linear-gradient(to right, #00d2d3, #fff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            {projectTitle ? `Editing: ${projectTitle}` : "Quantum Circuit Engine"}
-        </h2>
+      {/* Header Panel */}
+      <div className="glass-panel" style={{ padding: '20px 30px', borderRadius: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <div>
-            <button onClick={addQubit} className="btn-neon" style={{ marginRight: '15px', background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid #444' }}>
+            <h2 style={{ margin: 0, fontSize: '1.8rem', background: 'linear-gradient(to right, #00d2d3, #fff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                {projectTitle ? projectTitle : "Quantum Workspace"}
+            </h2>
+            <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>Visual Circuit Composer & Simulator</p>
+        </div>
+        <div style={{ display: 'flex', gap: '15px' }}>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={addQubit} style={{ ...btnStyle, background: 'rgba(255,255,255,0.05)', border: '1px solid #334155' }}>
                 + Add Qubit
-            </button>
-            {/* 👇 Updated button to trigger handleSave */}
-            <button onClick={handleSave} className="btn-neon" style={{ background: '#ffc107', color: 'black' }}>
-                {circuitId ? "💾 Update Project" : "💾 Save New Project"}
-            </button>
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleSave} style={{ ...btnStyle, background: '#00d2d3', color: '#0f172a', fontWeight: 'bold' }}>
+                {circuitId ? "💾 Update Project" : "💾 Save Project"}
+            </motion.button>
         </div>
       </div>
 
-      {/* --- CIRCUIT CANVAS --- */}
-      <div className="glass-panel" style={{ padding: '40px', borderRadius: '20px', minHeight: '300px', overflowX: 'auto', marginBottom: '30px' }}>
+      {/* Circuit Canvas */}
+      <div className="glass-panel" style={{ padding: '40px 20px', borderRadius: '15px', overflowX: 'auto', marginBottom: '30px', minHeight: '300px' }}>
         {circuit.map((qubitLine, index) => (
-          <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '40px', position: 'relative' }}>
+          <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '35px', position: 'relative' }}>
             
-            <div style={{ 
-                width: '50px', height: '50px', borderRadius: '50%', 
-                background: '#0f172a', border: '2px solid #00d2d3', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 'bold', color: '#00d2d3', zIndex: 2
-            }}>
-                q{index}
+            {/* Qubit Node */}
+            <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: '#0f172a', border: '2px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#94a3b8', zIndex: 2, boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+                |q{index}⟩
             </div>
             
-            <div style={{ position: 'absolute', left: '50px', right: 0, top: '50%', height: '2px', background: 'rgba(255,255,255,0.2)', zIndex: 0 }}></div>
+            {/* Quantum Wire */}
+            <div style={{ position: 'absolute', left: '60px', right: '20px', top: '50%', height: '2px', background: '#334155', zIndex: 0 }}></div>
 
-            <div style={{ display: 'flex', alignItems: 'center', marginLeft: '20px', zIndex: 1, gap: '15px' }}>
-              {qubitLine.map((gate, gIndex) => (
-                <motion.div 
-                    initial={{ scale: 0 }} animate={{ scale: 1 }} key={gIndex} 
-                    style={{ 
-                        width: '50px', height: '50px', background: 'rgba(0, 210, 211, 0.1)', border: '1px solid #00d2d3', color: '#00d2d3',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', borderRadius: '8px',
-                        backdropFilter: 'blur(5px)', boxShadow: '0 0 15px rgba(0,210,211,0.2)'
-                    }}
-                >
-                  {gate}
-                </motion.div>
-              ))}
-              <div style={{ opacity: 0.5, transition: '0.3s', display: 'flex', gap: '5px' }} className="gate-options">
-                 <button onClick={() => addGate(index, 'H')} style={miniBtn}>H</button>
-                 <button onClick={() => addGate(index, 'X')} style={miniBtn}>X</button>
-                 <button onClick={() => addGate(index, 'Z')} style={miniBtn}>Z</button>
-                 {qubitLine.length > 0 && <button onClick={() => removeGate(index)} style={{...miniBtn, color: 'red', borderColor: 'red'}}>×</button>}
+            {/* Gates */}
+            <div style={{ display: 'flex', alignItems: 'center', marginLeft: '30px', zIndex: 1, gap: '15px', minWidth: '100px' }}>
+              <AnimatePresence>
+                {qubitLine.map((gate, gIndex) => (
+                  <motion.div 
+                      initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }}
+                      key={gIndex} 
+                      style={{ width: '50px', height: '50px', background: 'rgba(0, 210, 211, 0.1)', border: '1px solid #00d2d3', color: '#00d2d3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 'bold', borderRadius: '8px', backdropFilter: 'blur(5px)', boxShadow: '0 0 15px rgba(0,210,211,0.2)' }}
+                  >
+                    {gate}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {/* Action Toolbar for this Qubit */}
+              <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.8)', padding: '5px', borderRadius: '8px', border: '1px solid #334155' }}>
+                 <button onClick={() => addGate(index, 'H')} style={gateBtnStyle}>H</button>
+                 <button onClick={() => addGate(index, 'X')} style={gateBtnStyle}>X</button>
+                 <button onClick={() => addGate(index, 'Z')} style={gateBtnStyle}>Z</button>
+                 {qubitLine.length > 0 && <button onClick={() => removeGate(index)} style={{...gateBtnStyle, color: '#ff4757', borderColor: 'rgba(255, 71, 87, 0.3)'}}>⌫</button>}
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ textAlign: 'center' }}>
+      {/* Execute Button */}
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <motion.button 
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={runSimulation} 
-            className="btn-neon" 
-            style={{ padding: '15px 50px', fontSize: '1.2rem', boxShadow: '0 0 30px rgba(0,210,211,0.4)' }}
+            whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(0,210,211,0.5)' }} whileTap={{ scale: 0.98 }}
+            onClick={runSimulation} className="btn-neon" disabled={loading}
+            style={{ padding: '18px 60px', fontSize: '1.2rem', borderRadius: '30px', letterSpacing: '1px' }}
         >
-          {loading ? "Computing Wavefunction..." : "▶ Run Simulation"}
+          {loading ? "COMPUTING STATE VECTOR..." : "EXECUTE CIRCUIT"}
         </motion.button>
       </div>
 
+      {/* Professional Results Visualization */}
       {results && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel" style={{ marginTop: '40px', padding: '30px', borderRadius: '15px' }}>
-          <h3 style={{ color: '#aaa', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Probability Distribution</h3>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', marginTop: '30px', alignItems: 'flex-end', height: '200px' }}>
-            {results.map((res, i) => (
-              <div key={i} style={{ textAlign: 'center', width: '60px' }}>
-                <div style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '10px', color: '#fff' }}>{(res.probability * 100).toFixed(1)}%</div>
-                <motion.div 
-                    initial={{ height: 0 }} animate={{ height: `${res.probability * 100}%` }} transition={{ duration: 1, type: 'spring' }}
-                    style={{ width: '100%', background: 'linear-gradient(to top, #00d2d3, #2e86de)', borderRadius: '5px 5px 0 0', boxShadow: '0 0 20px rgba(0,210,211,0.4)' }}
-                />
-                <div style={{ marginTop: '10px', color: '#aaa', fontFamily: 'monospace', fontSize: '1.2rem' }}>|{res.state}⟩</div>
-              </div>
-            ))}
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="glass-panel" style={{ padding: '40px', borderRadius: '15px' }}>
+          <div style={{ marginBottom: '30px', borderBottom: '1px solid #334155', paddingBottom: '15px' }}>
+            <h3 style={{ margin: 0, color: '#f8fafc' }}>Measurement Probabilities</h3>
+            <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>Ideal simulation results (shots = ∞)</p>
+          </div>
+          
+          <div style={{ width: '100%', height: '350px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={results} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                    <XAxis dataKey="state" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 14 }} dy={10} />
+                    <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} tickFormatter={(val) => `${val}%`} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                    <Bar dataKey="probability" radius={[4, 4, 0, 0]} animationDuration={1500}>
+                        {results.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.probability > 0 ? '#00d2d3' : '#334155'} />
+                        ))}
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
           </div>
         </motion.div>
       )}
@@ -195,6 +200,8 @@ const Simulator = () => {
   );
 };
 
-const miniBtn = { background: 'transparent', border: '1px solid #555', color: '#aaa', borderRadius: '4px', padding: '5px 8px', cursor: 'pointer', fontSize: '0.8rem', marginLeft: '5px' };
+// Reusable inline styles
+const btnStyle = { padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', color: '#fff', fontSize: '0.9rem', outline: 'none', transition: '0.2s' };
+const gateBtnStyle = { background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#cbd5e1', borderRadius: '4px', padding: '8px 12px', cursor: 'pointer', fontSize: '0.9rem', transition: '0.2s' };
 
 export default Simulator;
