@@ -1,73 +1,97 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, Line, Text } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
-// The actual 3D logic
 const QuantumSphere = ({ theta = 0, phi = 0 }) => {
   const sphereRef = useRef();
 
-  // Convert spherical (theta, phi) to Cartesian (x,y,z) for the vector arrow
-  // Note: in quantum mechanics, +Z is |0> and -Z is |1>
   const x = Math.sin(theta) * Math.cos(phi);
-  const y = Math.cos(theta); // Z in quantum is Y in 3D space usually, but let's map quantum Z to 3D Y for visual uprightness
+  const y = Math.cos(theta); 
   const z = Math.sin(theta) * Math.sin(phi);
 
   const vectorEnd = new THREE.Vector3(x * 2, y * 2, z * 2);
 
-  // Slow rotation for visual effect
   useFrame(() => {
-    if (sphereRef.current) sphereRef.current.rotation.y += 0.002;
+    if (sphereRef.current) sphereRef.current.rotation.y += 0.003; // Smooth idle rotation
   });
 
   return (
     <group ref={sphereRef}>
-      {/* Outer Transparent Sphere */}
-      <Sphere args={[2, 32, 32]}>
+      {/* Outer Glass Sphere */}
+      <Sphere args={[2, 64, 64]}>
         <meshPhysicalMaterial 
-            color="#00d2d3" 
+            color="#0f172a" 
             transparent 
-            opacity={0.1} 
+            opacity={0.15} 
             wireframe 
-            roughness={0} 
-            metalness={0.8} 
+            roughness={0.1} 
+            metalness={0.9}
+            clearcoat={1}
         />
       </Sphere>
 
-      {/* X, Y, Z Axes */}
-      <Line points={[[-2.5, 0, 0], [2.5, 0, 0]]} color="rgba(255,255,255,0.3)" lineWidth={1} />
-      <Line points={[[0, -2.5, 0], [0, 2.5, 0]]} color="rgba(255,255,255,0.3)" lineWidth={1} />
-      <Line points={[[0, 0, -2.5], [0, 0, 2.5]]} color="rgba(255,255,255,0.3)" lineWidth={1} />
+      {/* Glowing Axes */}
+      <Line points={[[-2.5, 0, 0], [2.5, 0, 0]]} color="#334155" lineWidth={1} />
+      <Line points={[[0, -2.5, 0], [0, 2.5, 0]]} color="#334155" lineWidth={1} />
+      <Line points={[[0, 0, -2.5], [0, 0, 2.5]]} color="#334155" lineWidth={1} />
 
-      {/* Axis Labels */}
-      <Text position={[2.7, 0, 0]} fontSize={0.3} color="white">X</Text>
-      <Text position={[0, 2.7, 0]} fontSize={0.3} color="white">|0⟩</Text>
-      <Text position={[0, -2.7, 0]} fontSize={0.3} color="white">|1⟩</Text>
-      <Text position={[0, 0, 2.7]} fontSize={0.3} color="white">Z</Text>
+      {/* Floating Labels */}
+      <Text position={[2.8, 0, 0]} fontSize={0.25} color="#94a3b8">X</Text>
+      <Text position={[0, 2.8, 0]} fontSize={0.25} color="#00d2d3">|0⟩</Text>
+      <Text position={[0, -2.8, 0]} fontSize={0.25} color="#00d2d3">|1⟩</Text>
+      <Text position={[0, 0, 2.8]} fontSize={0.25} color="#94a3b8">Z</Text>
 
-      {/* The State Vector Arrow */}
-      <Line points={[[0, 0, 0], vectorEnd]} color="#ff4757" lineWidth={4} />
-      <Sphere position={vectorEnd} args={[0.1, 16, 16]}>
-        <meshBasicMaterial color="#ff4757" />
+      {/* The Glowing State Vector Arrow */}
+      <Line points={[[0, 0, 0], vectorEnd]} color="#ff4757" lineWidth={5} />
+      
+      {/* Arrowhead (Emissive so it glows) */}
+      <Sphere position={vectorEnd} args={[0.08, 32, 32]}>
+        <meshStandardMaterial 
+            color="#ff4757" 
+            emissive="#ff4757" 
+            emissiveIntensity={2} 
+            toneMapped={false} 
+        />
       </Sphere>
       
-      {/* Center Core */}
-      <Sphere args={[0.05, 16, 16]}>
-        <meshBasicMaterial color="#ffffff" />
+      {/* Quantum Core */}
+      <Sphere args={[0.05, 32, 32]}>
+        <meshStandardMaterial 
+            color="#ffffff" 
+            emissive="#ffffff" 
+            emissiveIntensity={3} 
+            toneMapped={false} 
+        />
       </Sphere>
     </group>
   );
 };
 
-// The Responsive Container
 const BlochSphere = ({ theta = 0, phi = 0 }) => {
   return (
-    // This container fills whatever space the parent gives it (crucial for mobile responsiveness)
-    <div style={{ width: '100%', height: '100%', minHeight: '300px' }}>
-      <Canvas camera={{ position: [4, 3, 5], fov: 45 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
+    <div style={{ width: '100%', height: '100%', minHeight: '350px', background: 'transparent' }}>
+      <Canvas camera={{ position: [3.5, 2.5, 4.5], fov: 45 }} gl={{ antialias: true }}>
+        <color attach="background" args={['transparent']} />
+        
+        {/* Dark moody lighting */}
+        <ambientLight intensity={0.2} />
+        <pointLight position={[10, 10, 10]} intensity={1} color="#00d2d3" />
+        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff4757" />
+        
         <QuantumSphere theta={theta} phi={phi} />
+        
+        {/* Post-Processing: This creates the Cyberpunk/Neon Glow */}
+        <EffectComposer disableNormalPass>
+          <Bloom 
+            luminanceThreshold={0.2} 
+            mipmapBlur 
+            intensity={1.5} 
+          />
+        </EffectComposer>
+
+        {/* Let the user drag to rotate the sphere */}
         <OrbitControls enableZoom={false} enablePan={false} autoRotate={false} />
       </Canvas>
     </div>
