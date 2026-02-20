@@ -60,4 +60,46 @@ router.get('/fetchall', fetchuser, async (req, res) => {
         res.status(500).send("Internal Server Error");
     }
 });
+// ROUTE 4: Delete a Circuit (DELETE /api/simulation/delete/:id)
+router.delete('/delete/:id', fetchuser, async (req, res) => {
+    try {
+        let circuit = await Circuit.findById(req.params.id);
+        if (!circuit) { return res.status(404).send("Not Found"); }
+
+        // Verify ownership
+        if (circuit.user.toString() !== req.user.id) {
+            return res.status(401).send("Not Allowed");
+        }
+
+        circuit = await Circuit.findByIdAndDelete(req.params.id);
+        res.json({ "Success": "Circuit has been deleted", circuit: circuit });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+// ROUTE 5: Update a Circuit (PUT /api/simulation/update/:id)
+router.put('/update/:id', fetchuser, async (req, res) => {
+    try {
+        const { title, circuitData } = req.body;
+        
+        const newCircuit = {};
+        if (title) { newCircuit.title = title; }
+        if (circuitData) { newCircuit.circuitData = circuitData; }
+
+        let circuit = await Circuit.findById(req.params.id);
+        if (!circuit) { return res.status(404).send("Not Found"); }
+
+        if (circuit.user.toString() !== req.user.id) {
+            return res.status(401).send("Not Allowed");
+        }
+
+        circuit = await Circuit.findByIdAndUpdate(req.params.id, { $set: newCircuit }, { new: true });
+        res.json({ circuit });
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Internal Server Error");
+    }
+});
 module.exports = router;
