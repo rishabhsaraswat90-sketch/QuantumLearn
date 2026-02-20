@@ -3,16 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import BlochSphere from '../Components/BlochSphere'; // 👈 Importing your 3D component
 
 const Simulator = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // --- Logic State (Untouched) ---
   const [circuit, setCircuit] = useState(location.state?.circuitData || [[], []]); 
   const [circuitId, setCircuitId] = useState(location.state?.id || null); 
   const [projectTitle, setProjectTitle] = useState(location.state?.title || ""); 
-  const [results, setResults] = useState(null);     
+  const [results, setResults] = useState(null);
+  
+  // State for the 3D Sphere geometry
+  const [blochAngles, setBlochAngles] = useState({ theta: 0, phi: 0 });     
   const [loading, setLoading] = useState(false);
 
   const addQubit = () => {
@@ -43,14 +46,34 @@ const Simulator = () => {
       });
       const json = await response.json();
       if (json.success) {
-        // Format data for Recharts
+        
+        // 1. Format data for the Bar Chart
         const chartData = json.results.map(r => ({
             state: `|${r.state}⟩`,
-            probability: parseFloat((r.probability * 100).toFixed(2))
+            probability: parseFloat((r.probability * 100).toFixed(2)),
+            rawState: r.state
         }));
         setResults(chartData);
+
+        // 2. Calculate Math for Bloch Sphere (Qubit 0)
+        // Find total probability where Qubit 0 is measured as '1'
+        let prob1 = 0;
+        chartData.forEach(r => {
+            // Assuming state string maps Qubit 0 to the first character (e.g., '10' -> Qubit 0 is 1)
+            if (r.rawState[0] === '1') {
+                prob1 += (r.probability / 100);
+            }
+        });
+        
+        // Quantum Math: Probability of |1> = sin²(θ/2). Therefore, θ = 2 * arcsin(√P(|1>))
+        const theta = 2 * Math.asin(Math.sqrt(prob1));
+        const phi = 0; // Phase is unknown from basic probability measurements, defaulting to 0.
+        
+        setBlochAngles({ theta, phi });
         toast.success("Simulation Complete", { icon: '⚡' });
-      } else toast.error("Simulation Failed");
+      } else {
+        toast.error("Simulation Failed");
+      }
     } catch (error) {
       toast.error("Server Connection Error");
     }
@@ -88,7 +111,6 @@ const Simulator = () => {
     }
   };
 
-  // --- Custom Tooltip for the Chart ---
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -105,7 +127,7 @@ const Simulator = () => {
     <div style={{ padding: '100px 20px 40px 20px', maxWidth: '1200px', margin: '0 auto', color: 'white', fontFamily: 'Inter, sans-serif' }}>
       
       {/* Header Panel */}
-      <div className="glass-panel" style={{ padding: '20px 30px', borderRadius: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      <div className="glass-panel" style={{ padding: '20px 30px', borderRadius: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
             <h2 style={{ margin: 0, fontSize: '1.8rem', background: 'linear-gradient(to right, #00d2d3, #fff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 {projectTitle ? projectTitle : "Quantum Workspace"}
@@ -127,15 +149,12 @@ const Simulator = () => {
         {circuit.map((qubitLine, index) => (
           <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '35px', position: 'relative' }}>
             
-            {/* Qubit Node */}
-            <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: '#0f172a', border: '2px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#94a3b8', zIndex: 2, boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+            <div style={{ minWidth: '60px', height: '60px', borderRadius: '12px', background: '#0f172a', border: '2px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#94a3b8', zIndex: 2, boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
                 |q{index}⟩
             </div>
             
-            {/* Quantum Wire */}
             <div style={{ position: 'absolute', left: '60px', right: '20px', top: '50%', height: '2px', background: '#334155', zIndex: 0 }}></div>
 
-            {/* Gates */}
             <div style={{ display: 'flex', alignItems: 'center', marginLeft: '30px', zIndex: 1, gap: '15px', minWidth: '100px' }}>
               <AnimatePresence>
                 {qubitLine.map((gate, gIndex) => (
@@ -149,7 +168,6 @@ const Simulator = () => {
                 ))}
               </AnimatePresence>
 
-              {/* Action Toolbar for this Qubit */}
               <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.8)', padding: '5px', borderRadius: '8px', border: '1px solid #334155' }}>
                  <button onClick={() => addGate(index, 'H')} style={gateBtnStyle}>H</button>
                  <button onClick={() => addGate(index, 'X')} style={gateBtnStyle}>X</button>
@@ -172,35 +190,49 @@ const Simulator = () => {
         </motion.button>
       </div>
 
-      {/* Professional Results Visualization */}
+      {/* 👇 RESPONSIVE 3D VISUALIZATION GRID */}
       {results && (
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="glass-panel" style={{ padding: '40px', borderRadius: '15px' }}>
-          <div style={{ marginBottom: '30px', borderBottom: '1px solid #334155', paddingBottom: '15px' }}>
-            <h3 style={{ margin: 0, color: '#f8fafc' }}>Measurement Probabilities</h3>
-            <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>Ideal simulation results (shots = ∞)</p>
-          </div>
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="results-grid">
           
-          <div style={{ width: '100%', height: '350px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={results} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                    <XAxis dataKey="state" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 14 }} dy={10} />
-                    <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} tickFormatter={(val) => `${val}%`} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                    <Bar dataKey="probability" radius={[4, 4, 0, 0]} animationDuration={1500}>
-                        {results.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.probability > 0 ? '#00d2d3' : '#334155'} />
-                        ))}
-                    </Bar>
-                </BarChart>
-            </ResponsiveContainer>
+          {/* Panel 1: Probability Chart */}
+          <div className="result-card">
+            <div style={{ marginBottom: '20px', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#f8fafc' }}>Measurement Probabilities</h3>
+              <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>Full System State</p>
+            </div>
+            <div style={{ width: '100%', height: '300px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={results} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                      <XAxis dataKey="state" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 14 }} dy={10} />
+                      <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} tickFormatter={(val) => `${val}%`} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                      <Bar dataKey="probability" radius={[4, 4, 0, 0]} animationDuration={1500}>
+                          {results.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.probability > 0 ? '#00d2d3' : '#334155'} />
+                          ))}
+                      </Bar>
+                  </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
+
+          {/* Panel 2: 3D Bloch Sphere */}
+          <div className="result-card">
+            <div style={{ marginBottom: '20px', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, color: '#f8fafc' }}>Bloch Sphere</h3>
+              <p style={{ margin: '5px 0 0 0', color: '#64748b', fontSize: '0.9rem' }}>Estimated State vector for Qubit 0</p>
+            </div>
+            <div style={{ width: '100%', height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <BlochSphere theta={blochAngles.theta} phi={blochAngles.phi} />
+            </div>
+          </div>
+
         </motion.div>
       )}
     </div>
   );
 };
 
-// Reusable inline styles
 const btnStyle = { padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', color: '#fff', fontSize: '0.9rem', outline: 'none', transition: '0.2s' };
 const gateBtnStyle = { background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#cbd5e1', borderRadius: '4px', padding: '8px 12px', cursor: 'pointer', fontSize: '0.9rem', transition: '0.2s' };
 
