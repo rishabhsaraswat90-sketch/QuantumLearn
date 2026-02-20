@@ -21,7 +21,13 @@
     <meta name="description" content="Master quantum computing with our real-time circuit simulator and interactive learning platform." />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #0f172a; color: #00d2d3; font-family: monospace;">
+        <div style="width: 50px; height: 50px; border: 3px solid rgba(0, 210, 211, 0.3); border-radius: 50%; border-top-color: #00d2d3; animation: spin 1s ease-in-out infinite;"></div>
+        <p style="margin-top: 20px; letter-spacing: 2px;">INITIALIZING QUANTUM STATE...</p>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

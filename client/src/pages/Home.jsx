@@ -85,19 +85,28 @@ const Home = () => {
             </motion.button>
           </Link>
           
-          <Link to="/signup">
-            <motion.button 
-              whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
-              whileTap={{ scale: 0.95 }}
-              style={{ 
-                padding: '15px 40px', fontSize: '18px', borderRadius: '50px',
-                background: 'transparent', border: '1px solid rgba(255,255,255,0.2)',
-                color: 'white', cursor: 'pointer'
-              }}
-            >
-              Join for Free
-            </motion.button>
-          </Link>
+         {/* Conditional Button: Signup if logged out, Dashboard if logged in */}
+          {!localStorage.getItem('token') ? (
+            <Link to="/signup">
+              <motion.button 
+                whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                whileTap={{ scale: 0.95 }}
+                style={{ padding: '15px 40px', fontSize: '18px', borderRadius: '50px', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}
+              >
+                Join for Free
+              </motion.button>
+            </Link>
+          ) : (
+            <Link to="/dashboard">
+              <motion.button 
+                whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                whileTap={{ scale: 0.95 }}
+                style={{ padding: '15px 40px', fontSize: '18px', borderRadius: '50px', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer' }}
+              >
+                Access Dashboard
+              </motion.button>
+            </Link>
+          )}
         </motion.div>
       </div>
     </div>

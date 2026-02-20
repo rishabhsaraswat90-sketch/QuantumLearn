@@ -1,10 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 const Footer = () => {
+  const [email, setEmail] = useState("");
+
+  const handleSubscribe = () => {
+    if (!email) return toast.error("Please enter an email");
+    if (!email.includes("@")) return toast.error("Invalid email");
+    
+    toast.success("Subscribed to QuantumLearn Newsletter!");
+    setEmail("");
+  };
+
   return (
     <footer style={{ 
-        background: '#020617', // Darker than body
+        background: '#020617',
         color: '#94a3b8',
         padding: '80px 40px 20px 40px',
         borderTop: '1px solid rgba(255,255,255,0.05)',
@@ -15,7 +26,6 @@ const Footer = () => {
         justifyContent: 'space-between'
     }}>
       
-      {/* Top Section: Columns */}
       <div style={{ 
           maxWidth: '1400px', 
           margin: '0 auto', 
@@ -73,6 +83,8 @@ const Footer = () => {
             <div style={{ display: 'flex', gap: '10px' }}>
                 <input 
                     type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email" 
                     style={{ 
                         padding: '10px', 
@@ -83,13 +95,12 @@ const Footer = () => {
                         width: '100%'
                     }} 
                 />
-                <button className="btn-neon" style={{ padding: '10px 20px', fontSize: '0.9rem' }}>→</button>
+                <button onClick={handleSubscribe} className="btn-neon" style={{ padding: '10px 20px', fontSize: '0.9rem' }}>→</button>
             </div>
         </div>
 
       </div>
 
-      {/* Bottom Section: Copyright */}
       <div style={{ 
           maxWidth: '1400px', 
           margin: '60px auto 0 auto', 
