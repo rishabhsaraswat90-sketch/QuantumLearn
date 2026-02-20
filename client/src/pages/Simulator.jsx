@@ -5,6 +5,37 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import BlochSphere from '../Components/BlochSphere';
 
+// --- Custom Tooltip Component ---
+const GateTooltip = ({ text, children }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  return (
+    <div 
+        style={{ position: 'relative', display: 'inline-block' }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+    >
+      {children}
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+            style={{ 
+              position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
+              marginBottom: '10px', padding: '6px 12px', background: '#0f172a', 
+              border: '1px solid #00d2d3', color: '#00d2d3', fontSize: '0.75rem', fontWeight: 'bold',
+              borderRadius: '6px', whiteSpace: 'nowrap', zIndex: 50,
+              boxShadow: '0 4px 10px rgba(0,210,211,0.2)', pointerEvents: 'none'
+            }}
+          >
+            {text}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// --- Main Simulator Component ---
 const Simulator = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -121,7 +152,7 @@ const Simulator = () => {
     }
   };
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomChartTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div style={{ background: '#0f172a', border: '1px solid #00d2d3', padding: '10px', borderRadius: '8px', color: '#fff' }}>
@@ -136,6 +167,7 @@ const Simulator = () => {
   return (
     <div style={{ padding: '100px 20px 40px 20px', maxWidth: '1200px', margin: '0 auto', color: 'white', fontFamily: 'Inter, sans-serif' }}>
       
+      {/* Header Panel */}
       <div className="glass-panel" style={{ padding: '20px 30px', borderRadius: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
             <h2 style={{ margin: 0, fontSize: '1.8rem', background: 'linear-gradient(to right, #00d2d3, #fff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -153,6 +185,7 @@ const Simulator = () => {
         </div>
       </div>
 
+      {/* Circuit Canvas */}
       <div className="glass-panel" style={{ padding: '40px 20px', borderRadius: '15px', overflowX: 'auto', marginBottom: '30px', minHeight: '300px' }}>
         {circuit.map((qubitLine, index) => (
           <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '35px', position: 'relative' }}>
@@ -177,15 +210,28 @@ const Simulator = () => {
               </AnimatePresence>
 
               <div style={{ display: 'flex', gap: '8px', background: 'rgba(15, 23, 42, 0.8)', padding: '5px', borderRadius: '8px', border: '1px solid #334155' }}>
-                 <button title="Hadamard Gate (Superposition)" onClick={() => addGate(index, 'H')} style={gateBtnStyle}>H</button>
-                 <button title="Pauli-X Gate (NOT/Flip)" onClick={() => addGate(index, 'X')} style={gateBtnStyle}>X</button>
-                 <button title="Pauli-Z Gate (Phase Flip)" onClick={() => addGate(index, 'Z')} style={gateBtnStyle}>Z</button>
-                 {qubitLine.length > 0 && <button title="Remove Last Gate" onClick={() => removeGate(index)} style={{...gateBtnStyle, color: '#ff4757', borderColor: 'rgba(255, 71, 87, 0.3)'}}>⌫</button>}
+                 <GateTooltip text="Hadamard Gate (Superposition)">
+                    <button onClick={() => addGate(index, 'H')} style={gateBtnStyle}>H</button>
+                 </GateTooltip>
+                 
+                 <GateTooltip text="Pauli-X Gate (NOT/Flip)">
+                    <button onClick={() => addGate(index, 'X')} style={gateBtnStyle}>X</button>
+                 </GateTooltip>
+                 
+                 <GateTooltip text="Pauli-Z Gate (Phase Flip)">
+                    <button onClick={() => addGate(index, 'Z')} style={gateBtnStyle}>Z</button>
+                 </GateTooltip>
+                 
+                 {qubitLine.length > 0 && (
+                    <GateTooltip text="Remove Last Gate">
+                        <button onClick={() => removeGate(index)} style={{...gateBtnStyle, color: '#ff4757', borderColor: 'rgba(255, 71, 87, 0.3)'}}>⌫</button>
+                    </GateTooltip>
+                 )}
                  
                  {circuit.length > 2 && (
-                    <button title="Delete this entire Qubit line" onClick={() => removeQubit(index)} style={{...gateBtnStyle, color: '#ff4757', marginLeft: '10px'}}>
-                        🗑️
-                    </button>
+                    <GateTooltip text="Delete Qubit Line">
+                        <button onClick={() => removeQubit(index)} style={{...gateBtnStyle, color: '#ff4757', marginLeft: '10px'}}>🗑️</button>
+                    </GateTooltip>
                  )}
               </div>
             </div>
@@ -193,6 +239,7 @@ const Simulator = () => {
         ))}
       </div>
 
+      {/* Execute Button */}
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <motion.button 
             whileHover={{ scale: 1.02, boxShadow: '0 0 30px rgba(0,210,211,0.5)' }} whileTap={{ scale: 0.98 }}
@@ -203,9 +250,11 @@ const Simulator = () => {
         </motion.button>
       </div>
 
+      {/* RESPONSIVE 3D VISUALIZATION GRID */}
       {results && (
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="results-grid">
           
+          {/* Panel 1: Probability Chart */}
           <div className="result-card">
             <div style={{ marginBottom: '20px', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
               <h3 style={{ margin: 0, color: '#f8fafc' }}>Measurement Probabilities</h3>
@@ -216,7 +265,7 @@ const Simulator = () => {
                   <BarChart data={results} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
                       <XAxis dataKey="state" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 14 }} dy={10} />
                       <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} tickFormatter={(val) => `${val}%`} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                      <Tooltip content={<CustomChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                       <Bar dataKey="probability" radius={[4, 4, 0, 0]} animationDuration={1500}>
                           {results.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.probability > 0 ? '#00d2d3' : '#334155'} />
@@ -227,6 +276,7 @@ const Simulator = () => {
             </div>
           </div>
 
+          {/* Panel 2: 3D Bloch Sphere */}
           <div className="result-card">
             <div style={{ marginBottom: '20px', borderBottom: '1px solid #334155', paddingBottom: '10px' }}>
               <h3 style={{ margin: 0, color: '#f8fafc' }}>Bloch Sphere</h3>
@@ -250,7 +300,7 @@ const Simulator = () => {
                     placeholder="Enter project name..." 
                     value={tempTitle}
                     onChange={(e) => setTempTitle(e.target.value)}
-                    style={{ width: '100%', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', color: 'white', borderRadius: '8px', marginBottom: '20px' }}
+                    style={{ width: '100%', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', color: 'white', borderRadius: '8px', marginBottom: '20px', boxSizing: 'border-box' }}
                 />
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                     <button onClick={() => setShowSaveModal(false)} style={{ ...btnStyle, background: 'transparent', border: '1px solid #334155' }}>Cancel</button>
@@ -263,6 +313,9 @@ const Simulator = () => {
   );
 };
 
+// --- Reusable Styles ---
 const btnStyle = { padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', color: '#fff', fontSize: '0.9rem', outline: 'none', transition: '0.2s' };
 const gateBtnStyle = { background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#cbd5e1', borderRadius: '4px', padding: '8px 12px', cursor: 'pointer', fontSize: '0.9rem', transition: '0.2s' };
+
+// 👇 CRITICAL: This is what Vercel needs to build successfully
 export default Simulator;

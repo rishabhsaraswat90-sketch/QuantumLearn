@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-// 👇 Import Google Component
 import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
@@ -10,11 +9,9 @@ const Login = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // --- MANUAL LOGIN ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
     try {
         const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/login", {
             method: "POST",
@@ -37,7 +34,6 @@ const Login = () => {
     setLoading(false);
   }
 
-  // --- GOOGLE LOGIN ---
   const handleGoogleLogin = async (credentialResponse) => {
     try {
         const response = await fetch("https://quantumlearn-api.onrender.com/api/auth/google", {
@@ -46,44 +42,33 @@ const Login = () => {
             body: JSON.stringify({ token: credentialResponse.credential })
         });
         const json = await response.json();
-        
         if (json.success) {
             localStorage.setItem('token', json.authToken);
             window.dispatchEvent(new Event("userUpdated")); 
             toast.success("Google Login Successful");
             navigate("/");
-        } else {
-            toast.error("Google Login Failed");
-        }
+        } else toast.error("Google Login Failed");
     } catch (error) {
-        console.error(error);
         toast.error("Server Error");
     }
   };
 
-  const onChange = (e) => {
-    setCredentials({ ...credentials, [e.target.name]: e.target.value });
-  }
+  const onChange = (e) => setCredentials({ ...credentials, [e.target.name]: e.target.value });
 
   return (
-    <div style={{ padding: '80px 40px', height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)', overflow: 'hidden' }}>
+    // 👇 FIX: minHeight instead of height, overflowX hidden but allows vertical scroll, responsive padding
+    <div style={{ padding: '80px 20px', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)', overflowX: 'hidden' }}>
       
       <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} style={{ position: 'absolute', width: '800px', height: '800px', border: '1px solid rgba(0, 210, 211, 0.05)', borderRadius: '50%', zIndex: 0 }} />
 
-      <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="glass-panel" style={{ padding: '40px', width: '100%', maxWidth: '400px', borderRadius: '20px', position: 'relative', zIndex: 1 }}>
+      {/* 👇 FIX: Card padding reduced for mobile */}
+      <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} className="glass-panel" style={{ padding: '40px 20px', width: '100%', maxWidth: '400px', borderRadius: '20px', position: 'relative', zIndex: 1 }}>
         <h2 style={{ textAlign: 'center', margin: '0 0 30px 0', fontSize: '2rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             System Login
         </h2>
 
-        {/* 👇 GOOGLE BUTTON */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', minHeight: '40px' }}>
-            <GoogleLogin
-                onSuccess={handleGoogleLogin}
-                onError={() => toast.error("Login Failed")}
-                theme="filled_black"
-                shape="pill"
-                width="300" 
-            />
+            <GoogleLogin onSuccess={handleGoogleLogin} onError={() => toast.error("Login Failed")} theme="filled_black" shape="pill" width="300" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', color: '#64748b', fontSize: '0.8rem' }}>
@@ -93,19 +78,17 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '20px' }}>
             <label style={{ color: '#00d2d3', fontSize: '0.8rem', fontWeight: 'bold' }}>EMAIL ID</label>
-            <input type="email" name="email" onChange={onChange} style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155', color:'white', padding:'10px' }} required />
+            <input type="email" name="email" onChange={onChange} style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155', color:'white', padding:'12px', borderRadius: '8px', boxSizing: 'border-box' }} required />
           </div>
           
-          <div style={{ marginBottom: '30px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <label style={{ color: '#00d2d3', fontSize: '0.8rem', fontWeight: 'bold' }}>Qm-KEY (PASSWORD)</label>
-            <input type="password" name="password" onChange={onChange} style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155', color:'white', padding:'10px' }} required />
+            <input type="password" name="password" onChange={onChange} style={{ width: '100%', marginTop: '5px', background: 'rgba(0,0,0,0.3)', border: '1px solid #334155', color:'white', padding:'12px', borderRadius: '8px', boxSizing: 'border-box' }} required />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-    <Link to="/forgot-password" style={{ color: '#00d2d3', fontSize: '0.8rem', textDecoration: 'none' }}>
-        Forgot Password?
-    </Link>
-</div>
-          <button type="submit" className="btn-neon" style={{ width: '100%', padding: '12px' }} disabled={loading}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '30px' }}>
+            <Link to="/forgot-password" style={{ color: '#00d2d3', fontSize: '0.8rem', textDecoration: 'none' }}>Forgot Password?</Link>
+          </div>
+          <button type="submit" className="btn-neon" style={{ width: '100%', padding: '15px', borderRadius: '8px' }} disabled={loading}>
             {loading ? "Authenticating..." : "Initialize Session →"}
           </button>
         </form>
@@ -117,5 +100,4 @@ const Login = () => {
     </div>
   );
 }
-
 export default Login;
